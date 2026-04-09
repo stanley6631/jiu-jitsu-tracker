@@ -18,6 +18,7 @@ A personal Brazilian Jiu-Jitsu training log app for tracking technique focus, re
 | [Vite 6](https://vite.dev) | Build tool & dev server |
 | [TypeScript](https://typescriptlang.org) | Type safety |
 | [Tailwind CSS v3](https://tailwindcss.com) | Utility-first styling |
+| [shadcn/ui](https://ui.shadcn.com) | Accessible component library (Radix + CVA) |
 | [TanStack Query](https://tanstack.com/query) | Server state & data fetching |
 | [React Router v6](https://reactrouter.com) | Client-side routing |
 | [Supabase](https://supabase.com) | Backend, database & auth *(coming soon)* |
@@ -52,15 +53,22 @@ src/
 ├── api/              # TanStack Query hooks & API layer
 ├── components/
 │   ├── layout/       # Layout components (PageLayout, Header, etc.)
-│   └── ui/           # Reusable UI primitives (Button, Input, Card, etc.)
+│   └── ui/           # shadcn/ui components (auto-generated, do not edit manually)
 ├── hooks/            # Custom React hooks
-├── lib/              # Utilities & Supabase client (coming soon)
+├── lib/
+│   └── utils.ts      # cn() utility (clsx + tailwind-merge)
 ├── pages/
 │   ├── Home/         # Landing / dashboard page
 │   ├── LogEntry/     # Log a new training session
 │   └── LogHistory/   # Browse past sessions
 └── types/            # Shared TypeScript type definitions
 ```
+
+> **shadcn/ui** components live in `src/components/ui/`. Add new ones with:
+> ```bash
+> npx shadcn@latest add <component-name>
+> ```
+> Configuration is in `components.json` at the project root.
 
 ## Roadmap
 
