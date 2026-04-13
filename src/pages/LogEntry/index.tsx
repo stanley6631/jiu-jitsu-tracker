@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -5,6 +6,8 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase/client";
 import {
   Form,
   FormControl,
@@ -26,6 +29,9 @@ function getTodayISO() {
 }
 
 export default function LogEntry() {
+  const { user } = useAuth();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const form = useForm<LogEntryFormValues>({
     resolver: zodResolver(logEntrySchema),
     defaultValues: {
@@ -34,10 +40,32 @@ export default function LogEntry() {
     },
   });
 
-  function onSubmit(values: LogEntryFormValues) {
-    // TODO: send to Supabase
-    console.log(values);
-  }
+  const onSubmit = async (values: LogEntryFormValues) => {
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
+    if (!user) {
+      setSubmitError("You must be signed in to log a session.");
+      return;
+    }
+
+    const { error } = await supabase.from("session_log").insert({
+      session_time: values.date,
+      session_focus: values.sessionFocus,
+      user_id: user.id,
+    });
+
+    if (error) {
+      setSubmitError(error.message);
+      return;
+    }
+
+    form.reset({
+      date: getTodayISO(),
+      sessionFocus: "",
+    });
+    setSubmitSuccess("Session logged successfully.");
+  };
 
   return (
     <div className="max-w-lg">
@@ -45,6 +73,13 @@ export default function LogEntry() {
       <p className="mt-2 mb-6 text-gray-400">
         Record the techniques you focused on today.
       </p>
+
+      {submitError && (
+        <p className="mb-4 text-sm text-destructive">{submitError}</p>
+      )}
+      {submitSuccess && (
+        <p className="mb-4 text-sm text-emerald-400">{submitSuccess}</p>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -80,8 +115,12 @@ export default function LogEntry() {
             )}
           />
 
-          <Button type="submit" className="p-4 w-full cursor-pointer">
-            Log Session
+          <Button
+            type="submit"
+            className="p-4 w-full cursor-pointer"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? "Saving..." : "Log Session"}
           </Button>
         </form>
       </Form>
