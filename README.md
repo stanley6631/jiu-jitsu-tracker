@@ -21,7 +21,7 @@ A personal Brazilian Jiu-Jitsu training log app for tracking technique focus, re
 | [shadcn/ui](https://ui.shadcn.com) | Accessible component library (Radix + CVA) |
 | [TanStack Query](https://tanstack.com/query) | Server state & data fetching |
 | [React Router v6](https://reactrouter.com) | Client-side routing |
-| [Supabase](https://supabase.com) | Backend, database & auth *(coming soon)* |
+| [Supabase](https://supabase.com) | Backend, database & auth |
 
 ## Getting Started
 
@@ -72,7 +72,7 @@ src/
 
 ## Roadmap
 
-- [ ] Supabase integration (auth + database)
+- [x] Supabase integration (auth + database)
 - [ ] Session log form (techniques, duration, notes, date)
 - [ ] History page with filtering by technique / date range
 - [ ] Technique tagging system
