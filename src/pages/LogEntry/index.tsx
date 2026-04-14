@@ -6,7 +6,9 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubmissions } from "@/hooks/useSubmissions";
 import { supabase } from "@/lib/supabase/client";
 import {
   Form,
@@ -30,6 +32,8 @@ function getTodayISO() {
 
 export default function LogEntry() {
   const { user } = useAuth();
+  const { data: submissionOptions = [] } = useSubmissions();
+  const [selectedSubs, setSelectedSubs] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const form = useForm<LogEntryFormValues>({
@@ -49,21 +53,42 @@ export default function LogEntry() {
       return;
     }
 
-    const { error } = await supabase.from("session_log").insert({
-      session_time: values.date,
-      session_focus: values.sessionFocus,
-      user_id: user.id,
-    });
+    const { data: insertedRow, error } = await supabase
+      .from("session_log")
+      .insert({
+        session_time: values.date,
+        session_focus: values.sessionFocus,
+        user_id: user.id,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       setSubmitError(error.message);
       return;
     }
 
+    if (selectedSubs.length > 0 && insertedRow) {
+      const { error: junctionError } = await supabase
+        .from("session_log_submissions")
+        .insert(
+          selectedSubs.map((submissionId) => ({
+            session_log_id: insertedRow.id,
+            submission_id: submissionId,
+          })),
+        );
+
+      if (junctionError) {
+        setSubmitError(junctionError.message);
+        return;
+      }
+    }
+
     form.reset({
       date: getTodayISO(),
       sessionFocus: "",
     });
+    setSelectedSubs([]);
     setSubmitSuccess("Session logged successfully.");
   };
 
@@ -114,6 +139,21 @@ export default function LogEntry() {
               </FormItem>
             )}
           />
+
+          <FormItem>
+            <FormLabel>What submissions did you hit today?</FormLabel>
+            <FormControl>
+              <MultiSelect
+                options={submissionOptions.map((s) => ({
+                  label: s.name,
+                  value: s.id.toString(),
+                }))}
+                value={selectedSubs}
+                onChange={setSelectedSubs}
+                placeholder="Select submissions..."
+              />
+            </FormControl>
+          </FormItem>
 
           <Button
             type="submit"

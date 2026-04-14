@@ -1,9 +1,9 @@
-import { Link, Outlet } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/hooks/useAuth'
+import { Link, Outlet } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function PageLayout() {
-  const { signOut } = useAuth()
+  const { signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -26,7 +26,7 @@ export default function PageLayout() {
               variant="ghost"
               size="sm"
               onClick={() => void signOut()}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white hover:bg-blue-600 cursor-pointer transition-colors"
             >
               Sign out
             </Button>
@@ -38,6 +38,5 @@ export default function PageLayout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }
-
