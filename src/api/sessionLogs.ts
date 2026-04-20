@@ -1,9 +1,9 @@
 import { supabase } from '@/lib/supabase/client'
-import type { SessionLog, SessionLogsPage } from '@/types'
+import type { SessionLog, SessionLogsPage, SessionLogDetail } from '@/types'
 
 const PAGE_SIZE = 10
 
-export type { SessionLog, SessionLogsPage }
+export type { SessionLog, SessionLogsPage, SessionLogDetail }
 
 export async function fetchSessionLogs(page: number): Promise<SessionLogsPage> {
   const from = (page - 1) * PAGE_SIZE
@@ -18,6 +18,24 @@ export async function fetchSessionLogs(page: number): Promise<SessionLogsPage> {
   if (error) throw new Error(error.message)
 
   return { data: data ?? [], count: count ?? 0 }
+}
+
+export async function fetchSessionLog(id: string): Promise<SessionLogDetail> {
+  const { data, error } = await supabase
+    .from('session_log')
+    .select(`
+      *,
+      session_log_submissions(
+        submission_id,
+        submissions(id, name)
+      )
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) throw new Error(error.message)
+
+  return data as SessionLogDetail
 }
 
 export { PAGE_SIZE }

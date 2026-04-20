@@ -9,3 +9,15 @@ export interface SessionLogsPage {
   data: SessionLog[]
   count: number
 }
+
+export interface SessionLogSubmission {
+  submission_id: number
+  submissions: {
+    id: number
+    name: string
+  }
+}
+
+export interface SessionLogDetail extends SessionLog {
+  session_log_submissions: SessionLogSubmission[]
+}

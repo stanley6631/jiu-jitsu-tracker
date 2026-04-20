@@ -1,2 +1,2 @@
 export type { AuthContextValue } from './AuthContextValue'
-export type { SessionLog, SessionLogsPage } from './sessionLog'
+export type { SessionLog, SessionLogsPage, SessionLogDetail, SessionLogSubmission } from './sessionLog'
