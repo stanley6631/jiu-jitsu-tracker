@@ -3,6 +3,7 @@ export interface SessionLog {
   session_focus: string
   session_time: string
   user_id: string
+  is_gi_session?: boolean | null
 }
 
 export interface SessionLogsPage {

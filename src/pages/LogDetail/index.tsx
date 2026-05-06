@@ -35,6 +35,15 @@ export default function LogDetail() {
 
           <div>
             <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">
+              Session Type
+            </p>
+            <p className="text-white text-lg font-medium">
+              {data.is_gi_session ? "Gi" : "Nogi"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">
               Session Focus
             </p>
             <p className="text-white whitespace-pre-wrap">
