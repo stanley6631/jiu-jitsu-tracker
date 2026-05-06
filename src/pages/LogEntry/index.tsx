@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubmissions } from "@/hooks/useSubmissions";
 import { supabase } from "@/lib/supabase/client";
@@ -22,6 +23,7 @@ import {
 const logEntrySchema = z.object({
   date: z.string().min(1, "Date is required"),
   sessionFocus: z.string().min(1, "Session focus is required"),
+  sessionType: z.enum(["gi", "nogi"]),
 });
 
 type LogEntryFormValues = z.infer<typeof logEntrySchema>;
@@ -41,6 +43,7 @@ export default function LogEntry() {
     defaultValues: {
       date: getTodayISO(),
       sessionFocus: "",
+      sessionType: "nogi",
     },
   });
 
@@ -58,6 +61,7 @@ export default function LogEntry() {
       .insert({
         session_time: values.date,
         session_focus: values.sessionFocus,
+        is_gi_session: values.sessionType === "gi",
         user_id: user.id,
       })
       .select("id")
@@ -87,6 +91,7 @@ export default function LogEntry() {
     form.reset({
       date: getTodayISO(),
       sessionFocus: "",
+      sessionType: "nogi",
     });
     setSelectedSubs([]);
     setSubmitSuccess("Session logged successfully.");
@@ -134,6 +139,37 @@ export default function LogEntry() {
                     placeholder="What techniques or positions did you work on today?"
                     {...field}
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="sessionType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Session Type</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-6"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="nogi" id="nogi" />
+                      <label htmlFor="nogi" className="cursor-pointer text-sm">
+                        No-Gi
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="gi" id="gi" />
+                      <label htmlFor="gi" className="cursor-pointer text-sm">
+                        Gi
+                      </label>
+                    </div>
+                  </RadioGroup>
                 </FormControl>
                 <FormMessage />
               </FormItem>
