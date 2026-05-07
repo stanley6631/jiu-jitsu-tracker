@@ -4,7 +4,7 @@ import SessionsList from "@/components/sessions/SessionsList";
 import Statistics from "@/components/sessions/Statistics";
 
 export default function Home() {
-  const { data } = useSessionLogs(1);
+  const { data } = useSessionLogs(1, 5);
 
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
