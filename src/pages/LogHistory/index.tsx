@@ -66,6 +66,7 @@ export default function LogHistory() {
                         <PaginationLink
                           href="#"
                           isActive={item === page}
+                          className={item === page ? "bg-black text-white border-white hover:bg-black hover:text-white" : ""}
                           onClick={(e) => {
                             e.preventDefault();
                             setPage(item);
