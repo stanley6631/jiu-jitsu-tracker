@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useSessionLogs } from "../../hooks/useSessionLogs";
 import SessionsList from "@/components/sessions/SessionsList";
+import Statistics from "@/components/sessions/Statistics";
 
 export default function Home() {
   const { data } = useSessionLogs(1);
@@ -28,6 +29,7 @@ export default function Home() {
           View History
         </Link>
       </div>
+      {data && data.data.length > 0 && <Statistics />}
       {data && data.data.length > 0 && <SessionsList data={data.data} />}
     </div>
   );
