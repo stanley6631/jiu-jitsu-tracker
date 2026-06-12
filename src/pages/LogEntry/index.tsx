@@ -8,9 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useAuth } from "@/hooks/useAuth";
 import { useSubmissions } from "@/hooks/useSubmissions";
-import { supabase } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api/client";
 import {
   Form,
   FormControl,
@@ -33,7 +32,6 @@ function getTodayISO() {
 }
 
 export default function LogEntry() {
-  const { user } = useAuth();
   const { data: submissionOptions = [] } = useSubmissions();
   const [selectedSubs, setSelectedSubs] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -51,41 +49,19 @@ export default function LogEntry() {
     setSubmitError(null);
     setSubmitSuccess(null);
 
-    if (!user) {
-      setSubmitError("You must be signed in to log a session.");
+    try {
+      await apiFetch("/sessions/", {
+        method: "POST",
+        body: JSON.stringify({
+          session_time: values.date,
+          session_focus: values.sessionFocus,
+          is_gi_session: values.sessionType === "gi",
+          submission_ids: selectedSubs.map(Number),
+        }),
+      });
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to log session.");
       return;
-    }
-
-    const { data: insertedRow, error } = await supabase
-      .from("session_log")
-      .insert({
-        session_time: values.date,
-        session_focus: values.sessionFocus,
-        is_gi_session: values.sessionType === "gi",
-        user_id: user.id,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      setSubmitError(error.message);
-      return;
-    }
-
-    if (selectedSubs.length > 0 && insertedRow) {
-      const { error: junctionError } = await supabase
-        .from("session_log_submissions")
-        .insert(
-          selectedSubs.map((submissionId) => ({
-            session_log_id: insertedRow.id,
-            submission_id: submissionId,
-          })),
-        );
-
-      if (junctionError) {
-        setSubmitError(junctionError.message);
-        return;
-      }
     }
 
     form.reset({

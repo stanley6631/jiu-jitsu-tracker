@@ -1,39 +1,57 @@
 import { createContext, useEffect, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase/client";
-import type { AuthContextValue } from "@/types";
+import {
+  clearStoredEmail,
+  clearToken,
+  decodeJwtExp,
+  getStoredEmail,
+  getToken,
+  setStoredEmail,
+  setToken,
+} from "@/lib/api/client";
+import { login } from "@/api/auth";
+import type { AuthContextValue, AuthUser } from "@/types";
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
+function isTokenValid(token: string): boolean {
+  const exp = decodeJwtExp(token);
+  // No exp claim -> treat as non-expiring; otherwise compare against now.
+  return exp === null || exp * 1000 > Date.now();
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const token = getToken();
+    const email = getStoredEmail();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    if (token && isTokenValid(token) && email) {
+      setUser({ email });
+    } else {
+      clearToken();
+      clearStoredEmail();
+    }
 
-    return () => subscription.unsubscribe();
+    setLoading(false);
   }, []);
 
-  async function signOut() {
-    await supabase.auth.signOut();
+  async function signIn(email: string, password: string) {
+    const token = await login(email, password);
+    setToken(token);
+    setStoredEmail(email);
+    setUser({ email });
+  }
+
+  function signOut() {
+    clearToken();
+    clearStoredEmail();
+    setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

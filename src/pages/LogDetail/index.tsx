@@ -55,16 +55,16 @@ export default function LogDetail() {
             <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">
               Submissions
             </p>
-            {data.session_log_submissions.length === 0 ? (
+            {data.submissions.length === 0 ? (
               <p className="text-gray-500 text-sm">No submissions recorded.</p>
             ) : (
               <ul className="flex flex-wrap gap-2">
-                {data.session_log_submissions.map(({ submissions }) => (
+                {data.submissions.map((submission) => (
                   <li
-                    key={submissions.id}
+                    key={submission.id}
                     className="px-3 py-1 rounded-full bg-white/10 text-white text-sm"
                   >
-                    {submissions.name}
+                    {submission.name}
                   </li>
                 ))}
               </ul>

@@ -1,46 +1,35 @@
-import { supabase } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api/client";
 import type { SessionLog, SessionLogsPage, SessionLogDetail } from "@/types";
 
 const PAGE_SIZE = 10;
 
 export type { SessionLog, SessionLogsPage, SessionLogDetail };
 
+/**
+ * The backend returns all sessions in one call (no server-side paging), so we
+ * sort newest-first and paginate client-side to preserve the existing UI.
+ */
 export async function fetchSessionLogs(
   page: number,
   pageSize: number = PAGE_SIZE,
 ): Promise<SessionLogsPage> {
+  const all = await apiFetch<SessionLog[]>("/sessions/");
+
+  const sorted = [...all].sort(
+    (a, b) =>
+      new Date(b.session_time).getTime() - new Date(a.session_time).getTime(),
+  );
+
   const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const data = sorted.slice(from, from + pageSize);
 
-  const { data, error, count } = await supabase
-    .from("session_log")
-    .select("*", { count: "exact" })
-    .order("session_time", { ascending: false })
-    .range(from, to);
-
-  if (error) throw new Error(error.message);
-
-  return { data: data ?? [], count: count ?? 0 };
+  return { data, count: sorted.length };
 }
 
-export async function fetchSessionLog(id: string): Promise<SessionLogDetail> {
-  const { data, error } = await supabase
-    .from("session_log")
-    .select(
-      `
-      *,
-      session_log_submissions(
-        submission_id,
-        submissions(id, name)
-      )
-    `,
-    )
-    .eq("id", id)
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  return data as SessionLogDetail;
+export async function fetchSessionLog(
+  id: string | number,
+): Promise<SessionLogDetail> {
+  return apiFetch<SessionLogDetail>(`/sessions/${id}`);
 }
 
 export { PAGE_SIZE };

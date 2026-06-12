@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api/client";
 
 export interface Submission {
   id: number;
@@ -6,12 +6,6 @@ export interface Submission {
 }
 
 export async function fetchSubmissions(): Promise<Submission[]> {
-  const { data, error } = await supabase
-    .from("submissions")
-    .select("*")
-    .order("name", { ascending: true });
-
-  if (error) throw new Error(error.message);
-
-  return data ?? [];
+  const data = await apiFetch<Submission[]>("/submissions/");
+  return [...data].sort((a, b) => a.name.localeCompare(b.name));
 }

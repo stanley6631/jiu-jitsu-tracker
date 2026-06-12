@@ -1,9 +1,9 @@
 export interface SessionLog {
-  id: string
-  session_focus: string
+  id: number
+  session_focus: string | null
   session_time: string
-  user_id: string
   is_gi_session?: boolean | null
+  created_at?: string
 }
 
 export interface SessionLogsPage {
@@ -11,14 +11,9 @@ export interface SessionLogsPage {
   count: number
 }
 
-export interface SessionLogSubmission {
-  submission_id: number
+export interface SessionLogDetail extends SessionLog {
   submissions: {
     id: number
     name: string
-  }
-}
-
-export interface SessionLogDetail extends SessionLog {
-  session_log_submissions: SessionLogSubmission[]
+  }[]
 }

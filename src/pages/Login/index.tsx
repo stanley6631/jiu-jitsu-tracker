@@ -3,13 +3,12 @@ import { Navigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase/client'
 
 export default function Login() {
-  const { user, loading } = useAuth()
+  const { user, loading, signIn } = useAuth()
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (!loading && user) {
@@ -21,18 +20,13 @@ export default function Login() {
     setSubmitting(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
-    })
-
-    if (error) {
-      setError(error.message)
-    } else {
-      setSent(true)
+    try {
+      await signIn(email, password)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sign in')
+    } finally {
+      setSubmitting(false)
     }
-
-    setSubmitting(false)
   }
 
   return (
@@ -43,39 +37,45 @@ export default function Login() {
           <p className="text-muted-foreground text-sm">Sign in to your account</p>
         </div>
 
-        {sent ? (
-          <div className="rounded-lg border border-border bg-card p-6 text-center space-y-2">
-            <p className="font-medium">Check your email</p>
-            <p className="text-muted-foreground text-sm">
-              We sent a magic link to <strong>{email}</strong>. Click the link to sign in.
-            </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium">
+              Email address
+            </label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email address
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
 
-            {error && (
-              <p className="text-destructive text-sm">{error}</p>
-            )}
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium">
+              Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </div>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? 'Sending…' : 'Send magic link'}
-            </Button>
-          </form>
-        )}
+          {error && (
+            <p className="text-destructive text-sm">{error}</p>
+          )}
+
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </Button>
+        </form>
       </div>
     </div>
   )

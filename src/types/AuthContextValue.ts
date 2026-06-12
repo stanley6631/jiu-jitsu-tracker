@@ -1,8 +1,10 @@
-import type { Session, User } from "@supabase/supabase-js";
+export interface AuthUser {
+  email: string;
+}
 
 export interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   loading: boolean;
-  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => void;
 }
