@@ -2,14 +2,13 @@ import { Link } from "react-router-dom";
 import { useSessionLogs } from "../../hooks/useSessionLogs";
 import SessionsList from "@/components/sessions/SessionsList";
 import Statistics from "@/components/sessions/Statistics";
-import CompetitionInfoCard from "@/components/competition/CompetitionInfoCard";
+import Competitions from "@/components/competition/Competitions";
 
 export default function Home() {
   const { data } = useSessionLogs(1, 5);
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <CompetitionInfoCard />
+    <div className="flex flex-col items-center justify-center pt-5 pb-20 text-center">
       <h1 className="text-4xl font-bold tracking-tight text-white">
         Brazilian Jiu-Jitsu Tracker
       </h1>
@@ -31,6 +30,7 @@ export default function Home() {
           View History
         </Link>
       </div>
+      <Competitions />
       {data && data.data.length > 0 && <Statistics />}
       {data && data.data.length > 0 && <SessionsList data={data.data} />}
     </div>
