@@ -1,9 +1,9 @@
 import { apiFetch } from "@/lib/api/client";
 
-interface TokenResponse {
+type TokenResponse = {
   access_token: string;
   token_type: string;
-}
+};
 
 export async function login(
   email: string,

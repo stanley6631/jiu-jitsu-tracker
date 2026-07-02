@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import type { SessionLog } from "@/types";
 import { truncate, formatDate } from "@/lib/utils";
 
-interface SessionsListProps {
+type SessionsListProps = {
   data: SessionLog[];
-}
+};
 
 export default function SessionsList({ data }: SessionsListProps) {
   return (

@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface StatCardProps {
+type StatCardProps = {
   label: string;
   value: string | number | null;
-}
+};
 
 export default function StatCard({ label, value }: StatCardProps) {
   return (

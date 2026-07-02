@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api/client'
 import type { SessionLogDetail } from '@/types'
 
-export interface Statistics {
+export type Statistics = {
   thisMonthCount: number
   lastMonthCount: number
   topSubmission: string | null

@@ -11,11 +11,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface DatePickerProps {
+type DatePickerProps = {
   value: string;
   onChange: (value: string) => void;
   className?: string;
-}
+};
 
 export function DatePicker({ value, onChange, className }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);

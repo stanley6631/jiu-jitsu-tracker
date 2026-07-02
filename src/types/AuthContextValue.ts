@@ -1,10 +1,10 @@
-export interface AuthUser {
+export type AuthUser = {
   email: string;
-}
+};
 
-export interface AuthContextValue {
+export type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
-}
+};

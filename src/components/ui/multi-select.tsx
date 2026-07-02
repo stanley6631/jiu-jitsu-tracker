@@ -18,12 +18,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-export interface MultiSelectOption {
+export type MultiSelectOption = {
   label: string
   value: string
 }
 
-interface MultiSelectProps {
+type MultiSelectProps = {
   options: MultiSelectOption[]
   value: string[]
   onChange: (values: string[]) => void

@@ -1,4 +1,4 @@
-export interface SessionLog {
+export type SessionLog = {
   id: number
   session_focus: string | null
   session_time: string
@@ -6,12 +6,12 @@ export interface SessionLog {
   created_at?: string
 }
 
-export interface SessionLogsPage {
+export type SessionLogsPage = {
   data: SessionLog[]
   count: number
 }
 
-export interface SessionLogDetail extends SessionLog {
+export type SessionLogDetail = SessionLog & {
   submissions: {
     id: number
     name: string

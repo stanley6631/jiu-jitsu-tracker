@@ -1,9 +1,9 @@
 import { apiFetch } from "@/lib/api/client";
 
-export interface Submission {
+export type Submission = {
   id: number;
   name: string;
-}
+};
 
 export async function fetchSubmissions(): Promise<Submission[]> {
   const data = await apiFetch<Submission[]>("/submissions/");
