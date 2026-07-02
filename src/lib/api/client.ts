@@ -54,20 +54,34 @@ export function refreshAccessToken(): Promise<string | null> {
   return refreshInFlight;
 }
 
+/**
+ * Error thrown for non-2xx API responses. Carries the HTTP status so callers
+ * can branch on it (e.g. show a generic message for a 401 on login) instead
+ * of reflecting the raw backend `detail` string to the user.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function throwApiError(res: Response): Promise<never> {
   let message = res.statusText;
   try {
     const body = await res.json();
-    if (body?.detail) {
-      message =
-        typeof body.detail === "string"
-          ? body.detail
-          : JSON.stringify(body.detail);
+    // Only surface string details; structured details (FastAPI validation
+    // errors) are backend internals that shouldn't reach the user verbatim.
+    if (typeof body?.detail === "string") {
+      message = body.detail;
     }
   } catch {
     // non-JSON error body — fall back to statusText
   }
-  throw new Error(message);
+  throw new ApiError(message, res.status);
 }
 
 /**

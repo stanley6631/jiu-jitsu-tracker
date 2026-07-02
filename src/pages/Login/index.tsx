@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiError } from "@/lib/api/client";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address"),
@@ -44,7 +45,13 @@ export default function Login() {
     try {
       await signIn(values.email, values.password);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to sign in");
+      // Don't reflect backend error details on the login form — a 401 always
+      // means bad credentials, anything else is a generic failure.
+      setSubmitError(
+        err instanceof ApiError && err.status === 401
+          ? "Invalid email or password"
+          : "Failed to sign in. Please try again.",
+      );
     }
   };
 
