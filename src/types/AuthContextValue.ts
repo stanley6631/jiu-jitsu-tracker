@@ -1,10 +1,6 @@
-export type AuthUser = {
-  email: string;
-};
-
 export type AuthContextValue = {
-  user: AuthUser | null;
+  isAuthenticated: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 };

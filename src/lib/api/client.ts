@@ -1,84 +1,115 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-const TOKEN_KEY = "jj_access_token";
-const EMAIL_KEY = "jj_email";
+// The access token lives in memory only (never persisted). AuthContext mirrors
+// it in React state; this module-level copy exists so apiFetch can read it
+// outside the React tree.
+let accessToken: string | null = null;
 
-export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+type AuthCallbacks = {
+  onTokenRefreshed: (token: string) => void;
+  onSessionExpired: () => void;
+};
+
+let authCallbacks: AuthCallbacks | null = null;
+
+export function setAccessToken(token: string | null): void {
+  accessToken = token;
 }
 
-export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+export function setAuthCallbacks(callbacks: AuthCallbacks | null): void {
+  authCallbacks = callbacks;
 }
 
-export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-export function getStoredEmail(): string | null {
-  return localStorage.getItem(EMAIL_KEY);
-}
-
-export function setStoredEmail(email: string): void {
-  localStorage.setItem(EMAIL_KEY, email);
-}
-
-export function clearStoredEmail(): void {
-  localStorage.removeItem(EMAIL_KEY);
-}
+let refreshInFlight: Promise<string | null> | null = null;
 
 /**
- * Decode a JWT and return its `exp` claim (seconds since epoch), or null if the
- * token is malformed or has no expiry. No external dependency — just base64url.
+ * Exchange the httpOnly refresh cookie for a new access token. The server
+ * rotates the refresh token on every call and revokes the whole token family
+ * if it sees the same token twice, so concurrent callers MUST share a single
+ * in-flight request. Returns the new access token, or null if the session is
+ * gone.
  */
-export function decodeJwtExp(token: string): number | null {
+export function refreshAccessToken(): Promise<string | null> {
+  refreshInFlight ??= (async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        accessToken = null;
+        return null;
+      }
+      const data = (await res.json()) as { access_token: string };
+      accessToken = data.access_token;
+      authCallbacks?.onTokenRefreshed(data.access_token);
+      return data.access_token;
+    } catch {
+      accessToken = null;
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
+}
+
+async function throwApiError(res: Response): Promise<never> {
+  let message = res.statusText;
   try {
-    const payload = token.split(".")[1];
-    if (!payload) return null;
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(base64);
-    const claims = JSON.parse(json) as { exp?: number };
-    return typeof claims.exp === "number" ? claims.exp : null;
+    const body = await res.json();
+    if (body?.detail) {
+      message =
+        typeof body.detail === "string"
+          ? body.detail
+          : JSON.stringify(body.detail);
+    }
   } catch {
-    return null;
+    // non-JSON error body — fall back to statusText
   }
+  throw new Error(message);
 }
 
 /**
- * Thin fetch wrapper around the FastAPI backend. Prepends the API URL, sets JSON
- * headers, attaches the bearer token when present, and throws on non-2xx with
- * the FastAPI `detail` message. Returns parsed JSON, or undefined for empty
- * (204) responses.
+ * Thin fetch wrapper around the FastAPI backend. Prepends the API URL, sets
+ * JSON headers, attaches the in-memory bearer token, and sends cookies so the
+ * /auth endpoints can set/read the httpOnly refresh token. On a 401 from a
+ * non-auth endpoint it silently refreshes the access token and retries once.
+ * Throws on non-2xx with the FastAPI `detail` message. Returns parsed JSON,
+ * or undefined for empty (204) responses.
  */
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = getToken();
-  const headers = new Headers(options.headers);
-  if (!headers.has("Content-Type") && options.body) {
-    headers.set("Content-Type", "application/json");
-  }
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
+  const doFetch = () => {
+    const headers = new Headers(options.headers);
+    if (!headers.has("Content-Type") && options.body) {
+      headers.set("Content-Type", "application/json");
+    }
+    if (accessToken) {
+      headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+    return fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+  };
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let res = await doFetch();
+
+  if (res.status === 401 && !path.startsWith("/auth/")) {
+    const token = await refreshAccessToken();
+    if (!token) {
+      authCallbacks?.onSessionExpired();
+      await throwApiError(res);
+    }
+    res = await doFetch();
+  }
 
   if (!res.ok) {
-    let message = res.statusText;
-    try {
-      const body = await res.json();
-      if (body?.detail) {
-        message =
-          typeof body.detail === "string"
-            ? body.detail
-            : JSON.stringify(body.detail);
-      }
-    } catch {
-      // non-JSON error body — fall back to statusText
-    }
-    throw new Error(message);
+    await throwApiError(res);
   }
 
   if (res.status === 204) {

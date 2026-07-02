@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -13,47 +13,49 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { useAuth } from '@/hooks/useAuth'
+} from "@/components/ui/form";
+import { useAuth } from "@/hooks/useAuth";
 
 const loginSchema = z.object({
-  email: z.email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
-})
+  email: z.email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
-type LoginFormValues = z.infer<typeof loginSchema>
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { user, loading, signIn } = useAuth()
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const { isAuthenticated, loading, signIn } = useAuth();
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
-  })
+  });
 
-  if (!loading && user) {
-    return <Navigate to="/" replace />
+  if (!loading && isAuthenticated) {
+    return <Navigate to="/" replace />;
   }
 
   const onSubmit = async (values: LoginFormValues) => {
-    setSubmitError(null)
+    setSubmitError(null);
 
     try {
-      await signIn(values.email, values.password)
+      await signIn(values.email, values.password);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to sign in')
+      setSubmitError(err instanceof Error ? err.message : "Failed to sign in");
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1 text-center">
           <h1 className="text-2xl font-bold tracking-tight">🥋 BJJ Tracker</h1>
-          <p className="text-muted-foreground text-sm">Sign in to your account</p>
+          <p className="text-muted-foreground text-sm">
+            Sign in to your account
+          </p>
         </div>
 
         <Form {...form}>
@@ -105,11 +107,11 @@ export default function Login() {
               className="w-full"
               disabled={form.formState.isSubmitting}
             >
-              {form.formState.isSubmitting ? 'Signing in…' : 'Sign in'}
+              {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
         </Form>
       </div>
     </div>
-  )
+  );
 }

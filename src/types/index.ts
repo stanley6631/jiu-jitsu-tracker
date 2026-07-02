@@ -1,4 +1,4 @@
-export type { AuthContextValue, AuthUser } from "./AuthContextValue";
+export type { AuthContextValue } from "./AuthContextValue";
 export type {
   SessionLog,
   SessionLogsPage,

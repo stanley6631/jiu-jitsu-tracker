@@ -26,3 +26,8 @@ export async function register(
   });
   return data.access_token;
 }
+
+/** Revokes the refresh-token family server-side and clears the cookie. */
+export async function logout(): Promise<void> {
+  await apiFetch<undefined>("/auth/logout", { method: "POST" });
+}

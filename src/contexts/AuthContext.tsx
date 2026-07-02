@@ -1,57 +1,60 @@
 import { createContext, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  clearStoredEmail,
-  clearToken,
-  decodeJwtExp,
-  getStoredEmail,
-  getToken,
-  setStoredEmail,
-  setToken,
+  refreshAccessToken,
+  setAccessToken,
+  setAuthCallbacks,
 } from "@/lib/api/client";
-import { login } from "@/api/auth";
-import type { AuthContextValue, AuthUser } from "@/types";
+import { login, logout } from "@/api/auth";
+import type { AuthContextValue } from "@/types";
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
-function isTokenValid(token: string): boolean {
-  const exp = decodeJwtExp(token);
-  // No exp claim -> treat as non-expiring; otherwise compare against now.
-  return exp === null || exp * 1000 > Date.now();
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  // Memory-only copy of the access token; the refresh token lives in an
+  // httpOnly cookie the JS never sees.
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const token = getToken();
-    const email = getStoredEmail();
+    setAuthCallbacks({
+      onTokenRefreshed: (newToken) => setToken(newToken),
+      onSessionExpired: () => setToken(null),
+    });
 
-    if (token && isTokenValid(token) && email) {
-      setUser({ email });
-    } else {
-      clearToken();
-      clearStoredEmail();
-    }
+    // Bootstrap the session from the refresh cookie. Safe under StrictMode's
+    // double effect run — refreshAccessToken is single-flight.
+    void refreshAccessToken().then((newToken) => {
+      setToken(newToken);
+      setLoading(false);
+    });
 
-    setLoading(false);
+    return () => setAuthCallbacks(null);
   }, []);
 
   async function signIn(email: string, password: string) {
-    const token = await login(email, password);
-    setToken(token);
-    setStoredEmail(email);
-    setUser({ email });
+    const newToken = await login(email, password);
+    setAccessToken(newToken);
+    setToken(newToken);
   }
 
-  function signOut() {
-    clearToken();
-    clearStoredEmail();
-    setUser(null);
+  async function signOut() {
+    try {
+      await logout();
+    } catch {
+      // Server-side revocation failed (e.g. offline) — still end the local session.
+    }
+    setAccessToken(null);
+    setToken(null);
+    //clear the query so that users cache after logut clears and there are no data lingering
+    queryClient.clear();
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated: token !== null, loading, signIn, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
